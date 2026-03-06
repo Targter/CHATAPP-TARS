@@ -1,12 +1,10 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-// 1. Generate Upload URL (New)
 export const generateUploadUrl = mutation(async (ctx) => {
   return await ctx.storage.generateUploadUrl();
 });
 
-// ... createConversation ...
 export const createConversation = mutation({
   args: {
     participantId: v.id("users"),
@@ -56,7 +54,6 @@ export const createConversation = mutation({
   },
 });
 
-// ... createGroup ...
 export const createGroup = mutation({
   args: {
     name: v.string(),
@@ -85,7 +82,6 @@ export const createGroup = mutation({
   },
 });
 
-// 2. UPDATED: Update Settings (Handles Images Now)
 export const updateSettings = mutation({
   args: {
     conversationId: v.id("conversations"),
@@ -127,7 +123,6 @@ export const updateSettings = mutation({
   },
 });
 
-// ... get, getMyConversations, markAsRead (Keep exactly as before) ...
 export const get = query({
   args: { id: v.id("conversations") },
   handler: async (ctx, args) => {
