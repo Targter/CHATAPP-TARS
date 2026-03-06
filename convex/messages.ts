@@ -47,3 +47,35 @@ export const send = mutation({
     });
   },
 });
+
+
+export const deleteMessage = mutation({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    const message = await ctx.db.get(args.messageId);
+    if (!message) throw new Error("Message not found");
+
+    // Verify ownership
+    if (message.senderId !== user._id) {
+      throw new Error("You can only delete your own messages");
+    }
+
+    // Soft delete: Update content and set flag
+    await ctx.db.patch(args.messageId, {
+      content: "This message was deleted",
+      isDeleted: true,
+    });
+  },
+});

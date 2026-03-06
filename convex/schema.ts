@@ -27,6 +27,8 @@ export default defineSchema({
     content: v.string(),
     format: v.string(),
     updatedAt: v.number(),
+        isDeleted: v.optional(v.boolean()), // NEW: Soft delete flag
+
   })
   .index("by_conversation", ["conversationId"]),
 

@@ -2,13 +2,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, MoreVertical, Trash2 } from "lucide-react"; // Import Icons
 import { cn } from "@/lib/utils";
 import { Id } from "../../../convex/_generated/dataModel";
 import { TypingIndicator } from "./TypingIndicator";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMutation } from "convex/react"; // Import
+import { api } from "../../../convex/_generated/api"; // Import
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Import
 
 interface Message {
   _id: Id<"messages">;
@@ -16,13 +24,12 @@ interface Message {
   senderId: Id<"users">;
   _creationTime: number;
   conversationId: Id<"conversations">;
+  isDeleted?: boolean; // NEW
 }
 
 interface MessageListProps {
   messages: Message[];
   currentUserId: string;
-  // We might pass user images map here in a real app,
-  // but for now we fallback to initials
 }
 
 export function MessageList({ messages, currentUserId }: MessageListProps) {
@@ -31,22 +38,26 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const prevMessagesLength = useRef(messages.length);
 
-  // 1. Check scroll position
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+  // Mutation
+  const deleteMessage = useMutation(api.messages.deleteMessage);
 
-    // We are at the bottom if we are within 100px of the end
-    const isBottom = scrollHeight - scrollTop - clientHeight < 100;
-    setIsAtBottom(isBottom);
-
-    // Hide button if we scroll to bottom manually
-    if (isBottom) {
-      setShowScrollButton(false);
+  const handleDelete = async (messageId: Id<"messages">) => {
+    try {
+      await deleteMessage({ messageId });
+    } catch (error) {
+      console.error("Failed to delete", error);
     }
   };
 
-  // 2. Scroll to bottom helper
+  // ... (Keep handleScroll, scrollToBottom, useEffects same as Step 10) ...
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    const isBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setIsAtBottom(isBottom);
+    if (isBottom) setShowScrollButton(false);
+  };
+
   const scrollToBottom = (behavior: "auto" | "smooth" = "auto") => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
@@ -56,34 +67,24 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
     }
   };
 
-  // 3. Effect: Handle new messages
   useEffect(() => {
     const hasNewMessage = messages.length > prevMessagesLength.current;
-
     if (hasNewMessage) {
       const lastMessage = messages[messages.length - 1];
       const isMe = lastMessage.senderId === currentUserId;
-
       if (isMe || isAtBottom) {
-        // If I sent it, or I was already at the bottom, scroll down
-        // Use 'smooth' for nice effect when chatting, 'auto' could be used for instant
         scrollToBottom("smooth");
       } else {
-        // If I'm reading history and someone else sent a message, show button
         setShowScrollButton(true);
       }
     }
-
     prevMessagesLength.current = messages.length;
   }, [messages, currentUserId, isAtBottom]);
 
-  // 4. Effect: Initial load scroll
   useEffect(() => {
-    // Scroll to bottom immediately on mount without animation
     scrollToBottom("auto");
-  }, []); // Run once on mount
+  }, []);
 
-  // 5. Get conversation ID safely
   const conversationId = messages[0]?.conversationId;
 
   return (
@@ -102,13 +103,13 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
             <div
               key={msg._id}
               className={cn(
-                "flex w-full",
+                "flex w-full group", // Added 'group' for hover effects
                 isMe ? "justify-end" : "justify-start",
               )}
             >
               <div
                 className={cn(
-                  "flex max-w-[70%] md:max-w-[60%] gap-2",
+                  "flex max-w-[70%] md:max-w-[60%] gap-2 items-end",
                   isMe ? "flex-row-reverse" : "flex-row",
                 )}
               >
@@ -123,39 +124,74 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
                   </Avatar>
                 )}
 
+                {/* Message Bubble Group (Bubble + Menu) */}
                 <div
                   className={cn(
-                    "p-3 rounded-2xl text-sm shadow-sm",
-                    isMe
-                      ? "bg-primary text-primary-foreground rounded-tr-none"
-                      : "bg-card border border-border text-card-foreground rounded-tl-none",
+                    "flex items-center gap-2",
+                    isMe ? "flex-row-reverse" : "flex-row",
                   )}
                 >
-                  <p>{msg.content}</p>
-                  <span className="text-[10px] opacity-50 mt-1 block text-right">
-                    {new Date(msg._creationTime).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
+                  {/* The Bubble */}
+                  <div
+                    className={cn(
+                      "p-3 rounded-2xl text-sm shadow-sm relative transition-all",
+                      isMe
+                        ? "bg-primary text-primary-foreground rounded-tr-none"
+                        : "bg-card border border-border text-card-foreground rounded-tl-none",
+                      msg.isDeleted &&
+                        "bg-secondary/50 text-muted-foreground italic border-dashed",
+                    )}
+                  >
+                    <p>{msg.content}</p>
+                    <span className="text-[10px] opacity-50 mt-1 block text-right">
+                      {new Date(msg._creationTime).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+
+                  {/* Delete Menu (Only for Me & Not Deleted) */}
+                  {isMe && !msg.isDeleted && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-muted"
+                        >
+                          <MoreVertical className="w-3 h-3 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align={isMe ? "end" : "start"}
+                        className="bg-card border-border"
+                      >
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+                          onClick={() => handleDelete(msg._id)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Message
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </div>
             </div>
           );
         })}
 
-        {/* Typing Indicator */}
         {conversationId && (
           <div className="mt-auto pt-2">
             <TypingIndicator conversationId={conversationId} />
           </div>
         )}
 
-        {/* Invisible div to ensure bottom spacing */}
         <div className="h-4" />
       </div>
 
-      {/* "New Messages" Floating Button */}
       <AnimatePresence>
         {showScrollButton && (
           <motion.div
