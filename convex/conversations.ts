@@ -82,6 +82,7 @@ export const get = query({
 });
 
 
+// UPDATED: Get conversations with unread count
 export const getMyConversations = query({
   args: {},
   handler: async (ctx) => {
@@ -95,7 +96,6 @@ export const getMyConversations = query({
 
     if (!currentUser) return [];
 
-    // Get all conversations where user is participantOne or participantTwo
     const conversations1 = await ctx.db
       .query("conversations")
       .withIndex("by_participantOne", (q) => q.eq("participantOne", currentUser._id))
@@ -108,7 +108,6 @@ export const getMyConversations = query({
 
     const allConversations = [...conversations1, ...conversations2];
 
-    // Enrich with partner details and last message
     const conversationsWithDetails = await Promise.all(
       allConversations.map(async (conv) => {
         const partnerId =
@@ -125,15 +124,36 @@ export const getMyConversations = query({
           .order("desc")
           .first();
 
+        // Get last read timestamp
+        const lastReadRecord = await ctx.db
+          .query("conversation_last_read")
+          .withIndex("by_user_conversation", (q) =>
+            q.eq("userId", currentUser._id).eq("conversationId", conv._id)
+          )
+          .unique();
+
+        const lastSeenTime = lastReadRecord?.lastSeen || 0;
+
+        // Count unread messages
+        // Note: For high volume, we'd use a more optimized counter or separate field
+        const unreadMessages = await ctx.db
+          .query("messages")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .filter((q) => q.gt(q.field("_creationTime"), lastSeenTime))
+          .collect();
+          
+        // Filter out own messages from unread count
+        const unreadCount = unreadMessages.filter(m => m.senderId !== currentUser._id).length;
+
         return {
           ...conv,
           partner,
           lastMessage,
+          unreadCount,
         };
       })
     );
 
-    // Filter nulls (if partner deleted) and sort by last message time
     return conversationsWithDetails
       .filter((c) => c !== null)
       .sort((a, b) => {
@@ -141,5 +161,39 @@ export const getMyConversations = query({
         const timeB = b!.lastMessage?._creationTime || b!._creationTime;
         return timeB - timeA;
       });
+  },
+});
+
+
+export const markAsRead = mutation({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) return;
+
+    // Check if record exists
+    const existing = await ctx.db
+      .query("conversation_last_read")
+      .withIndex("by_user_conversation", (q) =>
+        q.eq("userId", user._id).eq("conversationId", args.conversationId)
+      )
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { lastSeen: Date.now() });
+    } else {
+      await ctx.db.insert("conversation_last_read", {
+        userId: user._id,
+        conversationId: args.conversationId,
+        lastSeen: Date.now(),
+      });
+    }
   },
 });

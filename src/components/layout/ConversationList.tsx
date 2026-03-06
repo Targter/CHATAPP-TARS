@@ -56,6 +56,12 @@ export function ConversationList() {
               {isUserOnline(conv?.partner?.lastSeen) && (
                 <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full animate-pulse"></span>
               )}
+
+              {conv?.unreadCount > 0 && (
+                <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
+                  {conv.unreadCount}
+                </div>
+              )}
             </div>
 
             {/* Content */}
