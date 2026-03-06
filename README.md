@@ -13,7 +13,7 @@
 **A modern, real-time chat application built with Next.js, Convex, and Clerk.**  
 _Submitted as part of the Tars Full Stack Engineer Internship Coding Challenge._
 
-[🚀 Live Demo](https://chatapp-tars.vercel.app/) · [📁 GitHub Repository](https://github.com/Targter/CHATAPP-TARS) · [🧑‍💻 Portfolio](https://abhaybansal.in/)
+[🚀 Live Demo](https://tars.abhaybansal.site/) · [📁 GitHub Repository](https://github.com/Targter/CHATAPP-TARS) · [🧑‍💻 Portfolio](https://abhaybansal.in/)
 
 </div>
 
@@ -264,7 +264,7 @@ This pushes your production schema and functions to Convex Cloud. The `CONVEX_DE
 
 > A walkthrough of the application showcasing authentication, one-to-one messaging, group chat creation, and the dark/light theme toggle.
 
-🔗 [Watch Demo](https://chatapp-tars.vercel.app/)
+🔗 [Watch Demo](https://tars.abhaybansal.site/)
 
 ---
 
@@ -274,7 +274,7 @@ This pushes your production schema and functions to Convex Cloud. The `CONVEX_DE
 
 - 🌐 Portfolio: [abhaybansal.in](https://abhaybansal.in/)
 - 💼 GitHub: [@Targter](https://github.com/Targter)
-- 🚀 Live App: [chatapp-tars.vercel.app](https://chatapp-tars.vercel.app/)
+- 🚀 Live App: [tars.abhaybansal.site](https://tars.abhaybansal.site/)
 
 ---
 
