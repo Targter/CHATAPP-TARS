@@ -3,7 +3,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { isUserOnline } from "@/lib/utils"; // Import
+import { isUserOnline } from "@/lib/utils";
 import { Loader2, MessageSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
@@ -12,9 +12,10 @@ import { cn } from "@/lib/utils";
 
 export function ConversationList() {
   const conversations = useQuery(api.conversations.getMyConversations);
+  const currentUser = useQuery(api.users.currentUser); // Needed for "You:" logic
   const params = useParams();
 
-  if (conversations === undefined) {
+  if (conversations === undefined || currentUser === undefined) {
     return (
       <div className="flex justify-center p-4">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -36,10 +37,14 @@ export function ConversationList() {
       {conversations.map((conv) => {
         const isActive = params?.id === conv?._id;
 
+        // Determine online status
+        // For groups, we might not track online status globally, so default to false
+        const showOnline = conv.isGroup ? false : isUserOnline(conv.lastSeen);
+
         return (
           <Link
-            key={conv?._id}
-            href={`/chat/${conv?._id}`}
+            key={conv._id}
+            href={`/chat/${conv._id}`}
             className={cn(
               "flex items-center gap-3 p-3 rounded-lg transition-all group",
               isActive
@@ -50,14 +55,18 @@ export function ConversationList() {
             {/* Avatar */}
             <div className="relative">
               <Avatar className="w-10 h-10 border border-border">
-                <AvatarImage src={conv?.partner?.image} />
-                <AvatarFallback>{conv?.partner?.name?.[0]}</AvatarFallback>
+                {/* FIX: Use top-level properties (name, image) instead of 'partner' */}
+                <AvatarImage src={conv.image} />
+                <AvatarFallback>
+                  {conv.name?.[0]?.toUpperCase() || "?"}
+                </AvatarFallback>
               </Avatar>
-              {isUserOnline(conv?.partner?.lastSeen) && (
+
+              {showOnline && (
                 <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full animate-pulse"></span>
               )}
 
-              {conv?.unreadCount > 0 && (
+              {conv.unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
                   {conv.unreadCount}
                 </div>
@@ -71,11 +80,13 @@ export function ConversationList() {
                   className={cn(
                     "text-sm font-medium truncate",
                     isActive ? "text-primary" : "text-foreground",
+                    conv.unreadCount > 0 && "font-bold",
                   )}
                 >
-                  {conv?.partner?.name}
+                  {/* FIX: Use conv.name directly */}
+                  {conv.name || "Unknown"}
                 </h4>
-                {conv?.lastMessage && (
+                {conv.lastMessage && (
                   <span className="text-[10px] text-muted-foreground">
                     {new Date(
                       conv.lastMessage._creationTime,
@@ -86,11 +97,26 @@ export function ConversationList() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground truncate">
-                {conv?.lastMessage ? (
-                  (conv.lastMessage.senderId === conv.partner._id
-                    ? ""
-                    : "You: ") + conv.lastMessage.content
+              <p
+                className={cn(
+                  "text-xs truncate",
+                  conv.unreadCount > 0
+                    ? "text-foreground font-medium"
+                    : "text-muted-foreground",
+                )}
+              >
+                {conv.lastMessage ? (
+                  <>
+                    {/* FIX: Check senderId against currentUser._id directly */}
+                    {conv.lastMessage.senderId === currentUser._id
+                      ? "You: "
+                      : ""}
+                    {conv.lastMessage.isDeleted ? (
+                      <span className="italic opacity-50">Message deleted</span>
+                    ) : (
+                      conv.lastMessage.content
+                    )}
+                  </>
                 ) : (
                   <span className="italic opacity-50">Drafting...</span>
                 )}

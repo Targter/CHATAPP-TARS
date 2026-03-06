@@ -1,57 +1,54 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
-  content: [
+    darkMode: "class", // <--- THIS IS CRITICAL
+    content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {
+  	extend: {
+      // ... your existing colors ...
       colors: {
+        // Ensure these variables exist in globals.css
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#9280FC",
-          foreground: "#FFFFFF",
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "#D5ABFF",
-          foreground: "#0F0F14",
-        },
-        accent: {
-          DEFAULT: "#D6E2F7",
-          foreground: "#0F0F14",
-        },
-        background: "#0F0F14",
-        foreground: "#FFFFFF",
-
-        card: {
-          DEFAULT: "#1A1A23",
-          foreground: "#FFFFFF",
-        },
-        popover: {
-          DEFAULT: "#1A1A23",
-          foreground: "#FFFFFF",
-        },
-        muted: {
-          DEFAULT: "#272732",
-          foreground: "#A0A0A0",
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "#FF4D4D",
-          foreground: "#FFFFFF",
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
-        border: "#272732",
-        input: "#272732",
-        ring: "#9280FC",
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
       },
-      fontFamily: {
-        heading: ["var(--font-poppins)"],
-        body: ["var(--font-inter)"],
-      },
-    },
+      // ... rest of config
+  	}
   },
   plugins: [require("tailwindcss-animate")],
 };
-
 export default config;

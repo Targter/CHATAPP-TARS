@@ -1,25 +1,106 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
+/* -----------------------------
+   Base Theme Variables
+------------------------------*/
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    /* Add other css vars if needed by shadcn, but tailwind config overrides most */
+
+    /* Core */
+    --radius: 0.75rem;
+
+    /* Light Theme */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    /* Tars Purple Brand */
+    --primary: 263 94% 75%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 270 100% 83%;
+    --secondary-foreground: 240 10% 3.9%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 240 10% 3.9%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 240 5% 35%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 263 94% 75%;
   }
 
-   /* body {
-    background-color: #0F0F14;
-    color: #FFFFFF;
-  } */
- 
+  /* -----------------------------
+     Dark Theme (Default for Tars)
+  ------------------------------*/
+
+  .dark {
+
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 8% 69%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 8% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 263 94% 75%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 270 100% 83%;
+    --secondary-foreground: 240 10% 3.9%;
+
+    --accent: 240 6% 10%;
+    --accent-foreground: 0 0% 98%;
+
+    --muted: 240 5% 12%;
+    --muted-foreground: 240 5% 64%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5% 15%;
+    --input: 240 5% 15%;
+    --ring: 263 94% 75%;
+  }
+}
+
+/* -----------------------------
+   Global Styles
+------------------------------*/
+
+@layer base {
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html, body {
+    height: 100%;
+  }
+
   body {
-    /* @apply bg-background text-foreground font-body antialiased; */
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-inter);
+    -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    /* @apply font-heading; */
+    font-family: var(--font-poppins);
+    letter-spacing: -0.02em;
   }
+
 }

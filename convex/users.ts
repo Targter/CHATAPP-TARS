@@ -49,13 +49,30 @@ export const store = mutation({
 /**
  * Get the current logged-in user's profile.
  */
+// export const currentUser = query({
+//   args: {},
+//   handler: async (ctx) => {
+//     const identity = await ctx.auth.getUserIdentity();
+//     if (!identity) {
+//       return null;
+//     }
+//     return await ctx.db
+//       .query("users")
+//       .withIndex("by_token", (q) =>
+//         q.eq("tokenIdentifier", identity.tokenIdentifier)
+//       )
+//       .unique();
+//   },
+// });
 export const currentUser = query({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
+
     if (!identity) {
       return null;
     }
+
     return await ctx.db
       .query("users")
       .withIndex("by_token", (q) =>
@@ -97,6 +114,36 @@ export const updatePresence = mutation({
       await ctx.db.patch(user._id, {
         lastSeen: Date.now(),
         isOnline: true,
+      });
+    }
+  },
+});
+
+export const generateUploadUrl = mutation(async (ctx) => {
+  return await ctx.storage.generateUploadUrl();
+});
+
+// 2. Update Profile Image
+export const updateImage = mutation({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    // Get the URL from the storage ID
+    const url = await ctx.storage.getUrl(args.storageId);
+
+    if (url) {
+      await ctx.db.patch(user._id, {
+        imageId: args.storageId,
+        image: url, // Update the display URL
       });
     }
   },

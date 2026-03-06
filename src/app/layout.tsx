@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/providers/ConvexClientProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProviders";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const poppins = Poppins({
@@ -22,11 +23,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${poppins.variable} bg-background text-foreground`}
       >
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

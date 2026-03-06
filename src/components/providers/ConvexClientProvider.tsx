@@ -1,15 +1,14 @@
-// src/components/providers/ConvexClientProvider.tsx
 "use client";
 
 import { ReactNode } from "react";
 import { ClerkProvider, useAuth } from "@clerk/nextjs";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ConvexReactClient } from "convex/react";
-import { usePresence } from "@/hooks/usePresence"; // Import
+import { usePresence } from "@/hooks/usePresence";
+import { UserSync } from "@/components/common/UserSync"; // <--- IMPORT THIS
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-// Internal component to use the hook
 function PresenceManager({ children }: { children: ReactNode }) {
   usePresence();
   return <>{children}</>;
@@ -30,6 +29,9 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
       }}
     >
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+        {/* Mount UserSync here so it runs on every page */}
+        <UserSync />
+
         <PresenceManager>{children}</PresenceManager>
       </ConvexProviderWithClerk>
     </ClerkProvider>
