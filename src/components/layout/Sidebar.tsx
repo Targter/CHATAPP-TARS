@@ -68,7 +68,7 @@ export function Sidebar() {
       {/* Footer / User Profile */}
       <div className="p-4 border-t border-border bg-background/30">
         <div className="flex items-center gap-3">
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
           <div className="flex flex-col overflow-hidden">
             <span className="text-sm font-medium truncate text-foreground">
               {user?.fullName}

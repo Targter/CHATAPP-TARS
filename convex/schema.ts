@@ -19,4 +19,14 @@ export default defineSchema({
   })
   .index("by_participantOne", ["participantOne", "participantTwo"])
   .index("by_participantTwo", ["participantTwo", "participantOne"]),
+
+  // NEW: Messages Table
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    senderId: v.id("users"),
+    content: v.string(),
+    format: v.string(), // "text", "image", etc.
+    updatedAt: v.number(),
+  })
+  .index("by_conversation", ["conversationId"]),
 });
