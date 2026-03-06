@@ -64,3 +64,18 @@ export const currentUser = query({
       .unique();
   },
 });
+
+export const getUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Called getUsers without authentication present");
+    }
+
+    const allUsers = await ctx.db.query("users").collect();
+    
+    // Filter out the current user
+    return allUsers.filter(u => u.tokenIdentifier !== identity.tokenIdentifier);
+  },
+});

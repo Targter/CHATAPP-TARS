@@ -5,12 +5,21 @@ import { UserButton, useUser } from "@clerk/nextjs";
 import { PlusCircle, Search, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { UserSearch } from "@/components/common/UserSearch"; // Import
 
 export function Sidebar() {
   const { user } = useUser();
+  const [isSearchOpen, setIsSearchOpen] = useState(false); // State
 
   return (
     <div className="h-full w-full flex flex-col bg-card border-r border-border">
+      {/* Search Modal */}
+      <UserSearch
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
+
       {/* Header */}
       <div className="p-4 flex items-center justify-between border-b border-border/50">
         <div className="flex items-center gap-2">
@@ -21,21 +30,25 @@ export function Sidebar() {
             Tars AI
           </span>
         </div>
-        {/* Mobile: This would be the close button, handled by parent in mobile view */}
       </div>
 
       {/* Action / Search */}
       <div className="p-4 space-y-4">
-        <Button className="w-full justify-start gap-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 shadow-none">
+        <Button
+          onClick={() => setIsSearchOpen(true)} // Open modal
+          className="w-full justify-start gap-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 shadow-none"
+        >
           <PlusCircle className="w-4 h-4" />
           New Chat
         </Button>
 
+        {/* Quick search input (also opens modal for now) */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search..."
             className="pl-9 bg-background/50 border-border focus-visible:ring-primary/20"
+            onFocus={() => setIsSearchOpen(true)}
           />
         </div>
       </div>
@@ -46,7 +59,6 @@ export function Sidebar() {
           Conversations
         </div>
 
-        {/* Placeholder for list */}
         <div className="px-2 py-8 text-center text-sm text-muted-foreground">
           <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
           <p>No conversations yet</p>
