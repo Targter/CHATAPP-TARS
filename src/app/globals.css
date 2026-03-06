@@ -1,26 +1,25 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    /* Add other css vars if needed by shadcn, but tailwind config overrides most */
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+   /* body {
+    background-color: #0F0F14;
+    color: #FFFFFF;
+  } */
+ 
+  body {
+    /* @apply bg-background text-foreground font-body antialiased; */
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    /* @apply font-heading; */
+  }
 }
