@@ -33,10 +33,16 @@ export default function ConversationPage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <ChatHeader
+      {/* <ChatHeader
         name={conversation?.partner?.name || "User"}
         image={conversation?.partner?.image}
         isOnline={conversation?.partner?.isOnline}
+      /> */}
+
+      <ChatHeader
+        name={conversation?.partner?.name || "User"}
+        image={conversation?.partner?.image}
+        lastSeen={conversation?.partner?.lastSeen} // Pass lastSeen
       />
 
       <MessageList messages={messages} currentUserId={currentUser?._id!} />

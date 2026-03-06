@@ -3,6 +3,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { isUserOnline } from "@/lib/utils"; // Import
 import { Loader2, MessageSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
@@ -52,8 +53,8 @@ export function ConversationList() {
                 <AvatarImage src={conv?.partner?.image} />
                 <AvatarFallback>{conv?.partner?.name?.[0]}</AvatarFallback>
               </Avatar>
-              {conv?.partner?.isOnline && (
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full"></span>
+              {isUserOnline(conv?.partner?.lastSeen) && (
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full animate-pulse"></span>
               )}
             </div>
 

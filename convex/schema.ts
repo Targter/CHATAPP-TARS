@@ -8,7 +8,8 @@ export default defineSchema({
     email: v.string(),
     name: v.string(),
     image: v.optional(v.string()),
-    isOnline: v.boolean(),
+    isOnline: v.boolean(), // We keep this for explicit offline/online toggles if needed
+    lastSeen: v.optional(v.number()), // NEW: The heartbeat timestamp
   })
   .index("by_token", ["tokenIdentifier"])
   .index("by_email", ["email"]), 
@@ -20,12 +21,11 @@ export default defineSchema({
   .index("by_participantOne", ["participantOne", "participantTwo"])
   .index("by_participantTwo", ["participantTwo", "participantOne"]),
 
-  // NEW: Messages Table
   messages: defineTable({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    format: v.string(), // "text", "image", etc.
+    format: v.string(),
     updatedAt: v.number(),
   })
   .index("by_conversation", ["conversationId"]),

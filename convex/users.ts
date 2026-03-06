@@ -79,3 +79,25 @@ export const getUsers = query({
     return allUsers.filter(u => u.tokenIdentifier !== identity.tokenIdentifier);
   },
 });
+
+export const updatePresence = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .unique();
+
+    if (user) {
+      await ctx.db.patch(user._id, {
+        lastSeen: Date.now(),
+        isOnline: true,
+      });
+    }
+  },
+});
