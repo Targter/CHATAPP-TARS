@@ -108,7 +108,7 @@ export function ConversationList() {
                 {conv.lastMessage ? (
                   <>
                     {/* FIX: Check senderId against currentUser._id directly */}
-                    {conv.lastMessage.senderId === currentUser._id
+                    {conv.lastMessage.senderId === currentUser?._id
                       ? "You: "
                       : ""}
                     {conv.lastMessage.isDeleted ? (
