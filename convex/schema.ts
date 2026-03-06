@@ -29,4 +29,12 @@ export default defineSchema({
     updatedAt: v.number(),
   })
   .index("by_conversation", ["conversationId"]),
+
+   // NEW: Typing Status
+  typing: defineTable({
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    expiresAt: v.number(),
+  })
+  .index("by_conversation", ["conversationId"]),
 });

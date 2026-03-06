@@ -1,13 +1,15 @@
 // src/components/chat/MessageList.tsx
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Id } from "../../../convex/_generated/dataModel";
+import { TypingIndicator } from "./TypingIndicator"; // Import
 
 interface Message {
   _id: Id<"messages">;
   content: string;
   senderId: Id<"users">;
-  _creationTime: number; // Convex adds this automatically
+  _creationTime: number;
+  conversationId: Id<"conversations">; // Add this to type if missing
 }
 
 interface MessageListProps {
@@ -16,11 +18,12 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages, currentUserId }: MessageListProps) {
-  // We need to scroll to bottom, will add that in Step 10.
-  // For now just render list.
+  // Get conversationId from first message (fallback handled if empty)
+  const conversationId = messages[0]?.conversationId;
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-6">
+    <div className="flex-1 overflow-y-auto p-4 space-y-6 flex flex-col">
+      {/* Existing Message Mapping... */}
       {messages.map((msg, index) => {
         const isMe = msg.senderId === currentUserId;
         const isConsecutive =
@@ -40,7 +43,6 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
                 isMe ? "flex-row-reverse" : "flex-row",
               )}
             >
-              {/* Avatar - only show if not consecutive or it's the first message */}
               {!isMe && (
                 <Avatar
                   className={cn(
@@ -48,7 +50,6 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
                     isConsecutive ? "opacity-0" : "opacity-100",
                   )}
                 >
-                  {/* We'd need to look up the sender image here, for now placeholder */}
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>
               )}
@@ -73,6 +74,16 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
           </div>
         );
       })}
+
+      {/* Typing Indicator at the bottom */}
+      {conversationId && (
+        <div className="mt-auto">
+          <TypingIndicator conversationId={conversationId} />
+        </div>
+      )}
+
+      {/* Dummy div for auto-scroll anchor (Step 10) */}
+      <div id="scroll-anchor" />
     </div>
   );
 }

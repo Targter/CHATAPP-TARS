@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"; // Check if you have textar
 import { Send, Paperclip, Smile } from "lucide-react";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+// import { useRef } from "react"; // Ensure imported
 import { Id } from "../../../convex/_generated/dataModel";
 
 interface MessageInputProps {
@@ -16,6 +17,8 @@ interface MessageInputProps {
 export function MessageInput({ conversationId }: MessageInputProps) {
   const [content, setContent] = useState("");
   const sendMessage = useMutation(api.messages.send);
+
+  const sendTyping = useMutation(api.typing.kick); // NEW
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = async () => {
@@ -40,6 +43,18 @@ export function MessageInput({ conversationId }: MessageInputProps) {
       handleSend();
     }
   };
+  const lastTypingRef = useRef(0);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
+
+    // Send typing notification at most every 1 second
+    const now = Date.now();
+    if (now - lastTypingRef.current > 1000) {
+      sendTyping({ conversationId });
+      lastTypingRef.current = now;
+    }
+  };
 
   return (
     <div className="p-4 border-t border-border bg-card/30">
@@ -52,12 +67,22 @@ export function MessageInput({ conversationId }: MessageInputProps) {
           <Paperclip className="w-4 h-4" />
         </Button>
 
-        <Textarea
+        {/* <Textarea
           ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a message..."
+          className="min-h-[40px] max-h-[160px] resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2 text-sm"
+          rows={1}
+        /> */}
+        <Textarea
+          ref={textareaRef}
+          value={content}
+          onChange={handleInputChange} // UPDATED
+          onKeyDown={handleKeyDown}
+          placeholder="Type a message..."
+          // ...
           className="min-h-[40px] max-h-[160px] resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2 text-sm"
           rows={1}
         />
