@@ -80,3 +80,66 @@ export const get = query({
     };
   },
 });
+
+
+export const getMyConversations = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!currentUser) return [];
+
+    // Get all conversations where user is participantOne or participantTwo
+    const conversations1 = await ctx.db
+      .query("conversations")
+      .withIndex("by_participantOne", (q) => q.eq("participantOne", currentUser._id))
+      .collect();
+
+    const conversations2 = await ctx.db
+      .query("conversations")
+      .withIndex("by_participantTwo", (q) => q.eq("participantTwo", currentUser._id))
+      .collect();
+
+    const allConversations = [...conversations1, ...conversations2];
+
+    // Enrich with partner details and last message
+    const conversationsWithDetails = await Promise.all(
+      allConversations.map(async (conv) => {
+        const partnerId =
+          conv.participantOne === currentUser._id
+            ? conv.participantTwo
+            : conv.participantOne;
+
+        const partner = await ctx.db.get(partnerId);
+        if (!partner) return null;
+
+        const lastMessage = await ctx.db
+          .query("messages")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .order("desc")
+          .first();
+
+        return {
+          ...conv,
+          partner,
+          lastMessage,
+        };
+      })
+    );
+
+    // Filter nulls (if partner deleted) and sort by last message time
+    return conversationsWithDetails
+      .filter((c) => c !== null)
+      .sort((a, b) => {
+        const timeA = a!.lastMessage?._creationTime || a!._creationTime;
+        const timeB = b!.lastMessage?._creationTime || b!._creationTime;
+        return timeB - timeA;
+      });
+  },
+});

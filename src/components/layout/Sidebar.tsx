@@ -2,19 +2,19 @@
 "use client";
 
 import { UserButton, useUser } from "@clerk/nextjs";
-import { PlusCircle, Search, MessageSquare } from "lucide-react";
+import { PlusCircle, Search } from "lucide-react"; // Removed MessageSquare
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { UserSearch } from "@/components/common/UserSearch"; // Import
+import { UserSearch } from "@/components/common/UserSearch";
+import { ConversationList } from "@/components/layout/ConversationList"; // Import
 
 export function Sidebar() {
   const { user } = useUser();
-  const [isSearchOpen, setIsSearchOpen] = useState(false); // State
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
     <div className="h-full w-full flex flex-col bg-card border-r border-border">
-      {/* Search Modal */}
       <UserSearch
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
@@ -35,14 +35,13 @@ export function Sidebar() {
       {/* Action / Search */}
       <div className="p-4 space-y-4">
         <Button
-          onClick={() => setIsSearchOpen(true)} // Open modal
+          onClick={() => setIsSearchOpen(true)}
           className="w-full justify-start gap-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 shadow-none"
         >
           <PlusCircle className="w-4 h-4" />
           New Chat
         </Button>
 
-        {/* Quick search input (also opens modal for now) */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -54,15 +53,13 @@ export function Sidebar() {
       </div>
 
       {/* Navigation / Conversation List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
-        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider">
+      <div className="flex-1 overflow-y-auto p-2">
+        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider mb-2">
           Conversations
         </div>
 
-        <div className="px-2 py-8 text-center text-sm text-muted-foreground">
-          <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
-          <p>No conversations yet</p>
-        </div>
+        {/* Real List */}
+        <ConversationList />
       </div>
 
       {/* Footer / User Profile */}
