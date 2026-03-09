@@ -1,19 +1,40 @@
-// src/components/layout/ConversationList.tsx
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { isUserOnline } from "@/lib/utils";
-import { Loader2, MessageSquare } from "lucide-react";
+import { Loader2, MessageSquare, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Id } from "../../../convex/_generated/dataModel";
 
 export function ConversationList() {
   const conversations = useQuery(api.conversations.getMyConversations);
-  const currentUser = useQuery(api.users.currentUser); // Needed for "You:" logic
+  const currentUser = useQuery(api.users.currentUser);
   const params = useParams();
+  const router = useRouter();
+
+  const deleteConversation = useMutation(api.conversations.deleteConversation);
+
+  const handleDelete = async (
+    e: React.MouseEvent,
+    conversationId: Id<"conversations">,
+  ) => {
+    e.preventDefault(); // Stop the <Link> from navigating
+    e.stopPropagation(); // Stop event bubbling
+
+    try {
+      await deleteConversation({ conversationId });
+      // Redirect to home if deleting the active chat
+      if (params?.id === conversationId) {
+        router.push("/chat");
+      }
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+    }
+  };
 
   if (conversations === undefined || currentUser === undefined) {
     return (
@@ -36,9 +57,6 @@ export function ConversationList() {
     <div className="space-y-1">
       {conversations.map((conv) => {
         const isActive = params?.id === conv?._id;
-
-        // Determine online status
-        // For groups, we might not track online status globally, so default to false
         const showOnline = conv.isGroup ? false : isUserOnline(conv.lastSeen);
 
         return (
@@ -53,9 +71,8 @@ export function ConversationList() {
             )}
           >
             {/* Avatar */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <Avatar className="w-10 h-10 border border-border">
-                {/* FIX: Use top-level properties (name, image) instead of 'partner' */}
                 <AvatarImage src={conv.image} />
                 <AvatarFallback>
                   {conv.name?.[0]?.toUpperCase() || "?"}
@@ -73,30 +90,45 @@ export function ConversationList() {
               )}
             </div>
 
-            {/* Content */}
+            {/* Content Area */}
             <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-baseline mb-0.5">
+              <div className="flex justify-between items-center mb-0.5">
                 <h4
                   className={cn(
-                    "text-sm font-medium truncate",
+                    "text-sm font-medium truncate pr-2",
                     isActive ? "text-primary" : "text-foreground",
                     conv.unreadCount > 0 && "font-bold",
                   )}
                 >
-                  {/* FIX: Use conv.name directly */}
                   {conv.name || "Unknown"}
                 </h4>
-                {conv.lastMessage && (
-                  <span className="text-[10px] text-muted-foreground">
-                    {new Date(
-                      conv.lastMessage._creationTime,
-                    ).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                )}
+
+                {/* RIGHT SIDE: Timestamp OR Delete Button */}
+                <div className="flex items-center justify-end shrink-0 h-5 min-w-[40px]">
+                  {/* Timestamp - Visible by default, Hidden on hover */}
+                  {conv.lastMessage && (
+                    <span className="text-[10px] text-muted-foreground group-hover:hidden transition-all">
+                      {new Date(
+                        conv.lastMessage._creationTime,
+                      ).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+
+                  {/* Delete Button - Hidden by default, Visible on hover */}
+                  <button
+                    onClick={(e) => handleDelete(e, conv._id)}
+                    className="hidden group-hover:flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded"
+                    title={conv.isGroup ? "Leave Group" : "Delete Chat"}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
+
+              {/* Message Preview */}
               <p
                 className={cn(
                   "text-xs truncate",
@@ -107,7 +139,6 @@ export function ConversationList() {
               >
                 {conv.lastMessage ? (
                   <>
-                    {/* FIX: Check senderId against currentUser._id directly */}
                     {conv.lastMessage.senderId === currentUser?._id
                       ? "You: "
                       : ""}

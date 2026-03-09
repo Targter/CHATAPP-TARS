@@ -305,3 +305,47 @@ export const getGroupMembers = query({
     return members.filter(m => m !== null);
   },
 });
+
+
+export const deleteConversation = mutation({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) return;
+
+    if (conversation.isGroup) {
+      // Logic for Group: Leave the group
+      const currentParticipants = conversation.participants ||[];
+      const newParticipants = currentParticipants.filter(
+        (id) => id !== user._id
+      );
+
+      if (newParticipants.length === 0) {
+        // If last person leaves, delete the group entirely
+        await ctx.db.delete(args.conversationId);
+      } else {
+        // Otherwise, just remove this user
+        await ctx.db.patch(args.conversationId, {
+          participants: newParticipants,
+        });
+      }
+    } else {
+      // Logic for 1:1 Chat: Delete the conversation entirely
+      await ctx.db.delete(args.conversationId);
+    }
+    
+    // Note: In a production app with huge data, we would also cascade delete 
+    // the messages associated with this conversation. For now, deleting the 
+    // conversation record perfectly removes it from the UI.
+  },
+});
