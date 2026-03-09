@@ -128,7 +128,7 @@ export default function LandingPage() {
                 className="w-full h-12 px-8 sm:w-auto group"
               >
                 <Link
-                  href="https://github.com/targter"
+                  href="https://github.com/targter/CHATAPP-TARS"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
