@@ -13,9 +13,20 @@ export const list = query({
       )
       .collect();
 
-    // Enhance messages with sender details (optional, or done in frontend)
-    // For speed, we'll return raw messages and let frontend resolve users via a separate query or cache
-    return messages;
+    // Fetch reactions for every message
+     return await Promise.all(
+      messages.map(async (msg) => {
+        const reactions = await ctx.db
+          .query("reactions")
+          .withIndex("by_message", (q) => q.eq("messageId", msg._id))
+          .collect();
+          
+        return {
+          ...msg,
+          reactions, // Attach reactions array to the message object
+        };
+      })
+    );
   },
 });
 
