@@ -60,7 +60,7 @@ export function CreateGroupDialog({ isOpen, onClose }: CreateGroupDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]  ">
+      <DialogContent className="sm:max-w-[425px]   ">
         <DialogHeader>
           <DialogTitle>Create Group</DialogTitle>
           <DialogDescription>

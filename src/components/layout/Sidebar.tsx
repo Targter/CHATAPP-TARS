@@ -135,11 +135,14 @@ export function Sidebar() {
                     {convexUser?.email}
                   </span>
                 </div>
-                <Settings className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-50" />
+                <Settings className="w-4 h-4 text-muted-foreground opacity-80" />
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-60 mb-2" align="start">
+          <DropdownMenuContent
+            className="w-60 mb-2 backdrop-blur-md "
+            align="start"
+          >
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
