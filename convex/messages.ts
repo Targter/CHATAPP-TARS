@@ -1,4 +1,5 @@
 // convex/messages.ts
+import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
@@ -20,9 +21,17 @@ export const list = query({
           .query("reactions")
           .withIndex("by_message", (q) => q.eq("messageId", msg._id))
           .collect();
+
+            let mediaUrl = null;
+          if (msg.format !== "text") {
+          // 'content' stores the storageId when format is image/video/audio
+          mediaUrl = await ctx.storage.getUrl(msg.content as Id<"_storage">);
+        }
+
           
         return {
           ...msg,
+          mediaUrl,
           reactions, // Attach reactions array to the message object
         };
       })
@@ -35,6 +44,7 @@ export const send = mutation({
   args: {
     conversationId: v.id("conversations"),
     content: v.string(),
+    format:v.optional(v.string()), // "text", "image", "video", "audio"
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -53,7 +63,7 @@ export const send = mutation({
       conversationId: args.conversationId,
       senderId: user._id,
       content: args.content,
-      format: "text",
+      format: args.format || "text",
       updatedAt: Date.now(),
     });
   },
@@ -87,6 +97,7 @@ export const deleteMessage = mutation({
     await ctx.db.patch(args.messageId, {
       content: "This message was deleted",
       isDeleted: true,
+       format: "text",
     });
   },
 });
