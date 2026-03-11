@@ -1,7 +1,14 @@
 // src/components/chat/ChatHeader.tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Phone, Video, Settings, ArrowLeft } from "lucide-react";
+import {
+  MoreVertical,
+  Phone,
+  Video,
+  Settings,
+  ArrowLeft,
+  Timer,
+} from "lucide-react";
 import { isUserOnline } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { ChatSettingsDialog } from "./ChatSettingsDialog";
@@ -18,6 +25,7 @@ interface ChatHeaderProps {
   themeColor?: string;
   isGroup?: boolean;
   partnerId?: Id<"users">;
+  currentTimer?: number; // Added to interface
 }
 
 export function ChatHeader({
@@ -28,6 +36,7 @@ export function ChatHeader({
   themeColor,
   isGroup,
   partnerId,
+  currentTimer,
 }: ChatHeaderProps) {
   const online = isUserOnline(lastSeen);
   const router = useRouter();
@@ -52,6 +61,7 @@ export function ChatHeader({
         currentTheme={themeColor}
         isGroup={isGroup}
         partnerId={partnerId}
+        currentTimer={currentTimer}
       />
 
       <div className="flex items-center gap-3">
@@ -76,8 +86,17 @@ export function ChatHeader({
           )}
         </div>
 
-        <div>
-          <h3 className="font-heading font-semibold text-sm">{name}</h3>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <h3 className="font-heading font-semibold text-sm">{name}</h3>
+            {/* Visual Indicator if Disappearing Messages are ON */}
+            {currentTimer ? (
+              <Timer
+                className="w-3 h-3 text-muted-foreground"
+                // title="Disappearing Messages ON"
+              />
+            ) : null}
+          </div>
 
           {/* UPDATED LOGIC HERE */}
           <p className="text-xs text-muted-foreground">

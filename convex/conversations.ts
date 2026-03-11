@@ -89,6 +89,7 @@ export const updateSettings = mutation({
     themeColor: v.optional(v.string()),
     targetUserId: v.optional(v.id("users")),
     groupImageId: v.optional(v.id("_storage")), // NEW: Accept storage ID
+     disappearingTimer: v.optional(v.number()), // NEW
   },
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
@@ -106,6 +107,9 @@ export const updateSettings = mutation({
       }
     }
 
+     if (args.disappearingTimer !== undefined) {
+      patchData.disappearingTimer = args.disappearingTimer === 0 ? undefined : args.disappearingTimer;
+    }
     // Handle Naming
     if (args.name !== undefined) {
        if (conversation.isGroup) {

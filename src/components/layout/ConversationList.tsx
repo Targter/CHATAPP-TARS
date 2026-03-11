@@ -121,7 +121,8 @@ export function ConversationList({
                     {conv.lastMessage && (
                       <span className="text-[10px] text-muted-foreground group-hover:hidden transition-all">
                         {new Date(
-                          conv.lastMessage._creationTime,
+                          conv.lastMessage.updatedAt ||
+                            conv.lastMessage._creationTime,
                         ).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",

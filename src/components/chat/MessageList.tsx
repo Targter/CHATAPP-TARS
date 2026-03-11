@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, MoreVertical, Trash2 } from "lucide-react";
+import { ArrowDown, Clock, MoreVertical, Timer, Trash2, X } from "lucide-react";
 import { cn, formatMessageTime } from "@/lib/utils";
 import { Id } from "../../../convex/_generated/dataModel";
 import { TypingIndicator } from "./TypingIndicator";
@@ -33,6 +33,10 @@ interface Message {
   conversationId: Id<"conversations">;
   isDeleted?: boolean;
   reactions?: Reaction[];
+  isScheduled?: boolean;
+  expiresAt?: number;
+  scheduledFor?: number; // NEW: Added this to interface
+  updatedAt?: number;
 }
 
 interface MessageListProps {
@@ -54,6 +58,7 @@ export function MessageList({
   const prevMessagesLength = useRef(messages.length);
 
   const deleteMessage = useMutation(api.messages.deleteMessage);
+  const cancelScheduled = useMutation(api.messages.cancelScheduled); // NEW
   const toggleReaction = useMutation(api.reactions.toggle);
 
   const handleDelete = async (messageId: Id<"messages">) => {
@@ -61,6 +66,15 @@ export function MessageList({
       await deleteMessage({ messageId });
     } catch (error) {
       console.error("Failed to delete", error);
+    }
+  };
+
+  // NEW: Handler for canceling scheduled messages
+  const handleCancelSchedule = async (messageId: Id<"messages">) => {
+    try {
+      await cancelScheduled({ messageId });
+    } catch (error) {
+      console.error("Failed to cancel schedule", error);
     }
   };
 
@@ -168,12 +182,11 @@ export function MessageList({
                       isMe ? "flex-row-reverse" : "flex-row",
                     )}
                   >
-                    {/* The Message Bubble - FIXED BACKGROUND STYLING */}
+                    {/* The Message Bubble */}
                     <div
                       className={cn(
                         "relative transition-all max-w-full overflow-hidden",
 
-                        // Apply standard bubble styles ONLY if it's text
                         (!msg.format || msg.format === "text") &&
                           !msg.isDeleted &&
                           "p-3 rounded-2xl text-sm shadow-sm",
@@ -186,28 +199,31 @@ export function MessageList({
                           !isMe &&
                           "bg-card border border-border text-card-foreground rounded-bl-none",
 
-                        // Apply deleted styles
                         msg.isDeleted &&
                           "p-3 rounded-2xl text-sm bg-secondary/50 text-muted-foreground italic border-dashed",
 
-                        // Apply media styles (Transparent background)
                         msg.format &&
                           msg.format !== "text" &&
                           !msg.isDeleted &&
                           "p-1 rounded-xl bg-transparent",
+
+                        // Scheduled Messages Styling
+                        msg.isScheduled &&
+                          "opacity-80 border-2 border-dashed border-primary/50 bg-background text-primary",
                       )}
                       style={{
-                        // Only apply custom theme colors if it is text
                         backgroundColor:
                           isMe &&
                           !msg.isDeleted &&
-                          (!msg.format || msg.format === "text")
+                          (!msg.format || msg.format === "text") &&
+                          !msg.isScheduled
                             ? themeColor
                             : undefined,
                         color:
                           isMe &&
                           !msg.isDeleted &&
-                          (!msg.format || msg.format === "text")
+                          (!msg.format || msg.format === "text") &&
+                          !msg.isScheduled
                             ? "#FFFFFF"
                             : undefined,
                       }}
@@ -218,6 +234,25 @@ export function MessageList({
                         </p>
                       ) : (
                         <>
+                          {/* UPDATED: Scheduled Indicator with Cancel Button */}
+                          {msg.isScheduled && (
+                            <div className="text-[10px] font-bold uppercase mb-2 flex items-center justify-between border-b border-primary/20 pb-1.5 gap-4">
+                              <div className="flex items-center gap-1 opacity-80">
+                                <Clock className="w-3 h-3" />
+                                Sends at{" "}
+                                {msg.scheduledFor
+                                  ? formatMessageTime(msg.scheduledFor)
+                                  : ""}
+                              </div>
+                              <button
+                                onClick={() => handleCancelSchedule(msg._id)}
+                                className="flex items-center gap-1 bg-destructive/10 text-destructive hover:bg-destructive/20 px-1.5 py-0.5 rounded transition-colors"
+                              >
+                                <X className="w-3 h-3" /> Cancel
+                              </button>
+                            </div>
+                          )}
+
                           {(!msg.format || msg.format === "text") && (
                             <p className="whitespace-pre-wrap break-words">
                               {msg.content}
@@ -246,35 +281,46 @@ export function MessageList({
                               controls
                               className={cn(
                                 "max-w-[200px] md:max-w-[260px]",
-                                isMe ? "invert" : "",
+                                isMe && !msg.isScheduled ? "invert" : "",
                               )}
                             />
                           )}
                         </>
                       )}
 
-                      {/* Smart Timestamp positioning */}
-                      <span
+                      <div
                         className={cn(
-                          "text-[10px] mt-1 block font-medium",
-                          msg.format && msg.format !== "text" && !msg.isDeleted
+                          "flex items-center gap-1 font-medium mt-1",
+                          msg.format &&
+                            msg.format !== "text" &&
+                            !msg.isDeleted &&
+                            !msg.isScheduled
                             ? "absolute bottom-3 right-3 text-white drop-shadow-md bg-black/60 px-1.5 py-0.5 rounded-md backdrop-blur-md z-10"
-                            : "text-right opacity-60",
+                            : "justify-end opacity-60",
                         )}
                       >
-                        {formatMessageTime(msg._creationTime)}
-                      </span>
+                        {msg.expiresAt &&
+                          !msg.isScheduled &&
+                          !msg.isDeleted && <Timer className="w-3 h-3" />}
+                        <span className="text-[10px]">
+                          {/* If scheduled, show when it was created. Otherwise, standard time */}
+                          {msg.isScheduled
+                            ? "Drafted"
+                            : formatMessageTime(
+                                msg.updatedAt || msg._creationTime,
+                              )}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Quick Actions Menu (Hover) - IMPROVED STYLING */}
-                    {!msg.isDeleted && (
+                    {/* Quick Actions Menu (Hover) - Disabled for scheduled msgs */}
+                    {!msg.isDeleted && !msg.isScheduled && (
                       <div
                         className={cn(
                           "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
                           isMe ? "flex-row-reverse" : "flex-row",
                         )}
                       >
-                        {/* Hover Emoji Bar */}
                         <div className="flex bg-popover border border-border rounded-full p-1 shadow-md">
                           {EMOJI_OPTIONS.map((emoji) => (
                             <button
@@ -287,7 +333,6 @@ export function MessageList({
                           ))}
                         </div>
 
-                        {/* Delete Menu (Only for Me) */}
                         {isMe && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -317,7 +362,7 @@ export function MessageList({
                     )}
                   </div>
 
-                  {/* Reaction Badges Row */}
+                  {/* Reaction Badges */}
                   {Object.keys(reactionCounts).length > 0 && (
                     <div
                       className={cn(

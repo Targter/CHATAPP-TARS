@@ -32,6 +32,7 @@ export default defineSchema({
     // Customization
     themeColor: v.optional(v.string()), 
     nicknames: v.optional(v.any()), 
+    disappearingTimer: v.optional(v.number()), 
   })
   .index("by_participantOne", ["participantOne", "participantTwo"])
   .index("by_participantTwo", ["participantTwo", "participantOne"]),
@@ -42,7 +43,12 @@ export default defineSchema({
     content: v.string(),
     format: v.string(),
     updatedAt: v.number(),
+
     isDeleted: v.optional(v.boolean()),
+    // 
+     expiresAt: v.optional(v.number()), 
+    isScheduled: v.optional(v.boolean()),
+    scheduledFor: v.optional(v.number()),
   })
   .index("by_conversation", ["conversationId"]),
 
