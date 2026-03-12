@@ -22,7 +22,7 @@ export const createConversation = mutation({
 
     if (!currentUser) throw new Error("User not found");
 
-    const existingConversation = await ctx.db
+    const existingConversation = await ctx.db 
       .query("conversations")
       .filter((q) => 
         q.or(
@@ -129,6 +129,38 @@ export const updateSettings = mutation({
 
 export const get = query({
   args: { id: v.id("conversations") },
+  // handler: async (ctx, args) => {
+  //   const identity = await ctx.auth.getUserIdentity();
+  //   if (!identity) return null;
+
+  //   const conversation = await ctx.db.get(args.id);
+  //   if (!conversation) return null;
+
+  //   let partner = null;
+    
+  //   // Logic: If it is NOT a group (isGroup is false or undefined), try to find partner
+  //   if (!conversation.isGroup) {
+  //       const currentUser = await ctx.db
+  //       .query("users")
+  //       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+  //       .unique();
+
+  //       if (currentUser) {
+  //            const partnerId = conversation.participantOne === currentUser._id
+  //           ? conversation.participantTwo
+  //           : conversation.participantOne;
+            
+  //           if (partnerId) {
+  //               partner = await ctx.db.get(partnerId);
+  //           }
+  //       }
+  //   }
+
+  //   return {
+  //     ...conversation,
+  //     partner,
+  //   };
+  // },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
@@ -137,8 +169,9 @@ export const get = query({
     if (!conversation) return null;
 
     let partner = null;
+    let isBlocker = false;
+    let isBlocked = false;
     
-    // Logic: If it is NOT a group (isGroup is false or undefined), try to find partner
     if (!conversation.isGroup) {
         const currentUser = await ctx.db
         .query("users")
@@ -146,12 +179,28 @@ export const get = query({
         .unique();
 
         if (currentUser) {
-             const partnerId = conversation.participantOne === currentUser._id
-            ? conversation.participantTwo
-            : conversation.participantOne;
+            const partnerId = conversation.participantOne === currentUser._id
+              ? conversation.participantTwo
+              : conversation.participantOne;
             
             if (partnerId) {
                 partner = await ctx.db.get(partnerId);
+
+                // CHECK BLOCKS
+                const blockerRecord = await ctx.db.query("blocks")
+                  .withIndex("by_blocker", q => q.eq("blockerId", currentUser._id).eq("blockedId", partnerId))
+                  .unique();
+                isBlocker = !!blockerRecord;
+
+                const blockedRecord = await ctx.db.query("blocks")
+                  .withIndex("by_blocker", q => q.eq("blockerId", partnerId).eq("blockedId", currentUser._id))
+                  .unique();
+                isBlocked = !!blockedRecord;
+
+                // CENSOR PROFILE IF BLOCKED
+                if (isBlocked && partner) {
+                  partner = { ...partner, name: "User", image: undefined, isOnline: false, lastSeen: 0 };
+                }
             }
         }
     }
@@ -159,6 +208,8 @@ export const get = query({
     return {
       ...conversation,
       partner,
+      isBlocker, // Expose to UI
+      isBlocked  // Expose to UI
     };
   },
 });
@@ -191,15 +242,41 @@ export const getMyConversations = query({
         let isOnline = false;
         let partnerLastSeen = 0;
 
+        // if (!conv.isGroup) {
+        //      const partnerId = conv.participantOne === currentUser._id ? conv.participantTwo : conv.participantOne;
+        //      if (partnerId) {
+        //          const partner = await ctx.db.get(partnerId);
+        //          const nick = conv.nicknames?.[partnerId];
+        //          name = nick || partner?.name || "User";
+        //          image = partner?.image;
+        //          isOnline = partner?.isOnline || false;
+        //          partnerLastSeen = partner?.lastSeen || 0;
+        //      }
+        // }
         if (!conv.isGroup) {
              const partnerId = conv.participantOne === currentUser._id ? conv.participantTwo : conv.participantOne;
              if (partnerId) {
                  const partner = await ctx.db.get(partnerId);
-                 const nick = conv.nicknames?.[partnerId];
-                 name = nick || partner?.name || "User";
-                 image = partner?.image;
-                 isOnline = partner?.isOnline || false;
-                 partnerLastSeen = partner?.lastSeen || 0;
+                 
+                 // CHECK IF BLOCKED
+                 const blockedRecord = await ctx.db.query("blocks")
+                   .withIndex("by_blocker", q => q.eq("blockerId", partnerId).eq("blockedId", currentUser._id))
+                   .unique();
+
+                 if (blockedRecord) {
+                   // CENSOR
+                   name = "User";
+                   image = undefined;
+                   isOnline = false;
+                   partnerLastSeen = 0;
+                 } else {
+                   // NORMAL
+                   const nick = conv.nicknames?.[partnerId];
+                   name = nick || partner?.name || "User";
+                   image = partner?.image;
+                   isOnline = partner?.isOnline || false;
+                   partnerLastSeen = partner?.lastSeen || 0;
+                 }
              }
         }
 
@@ -351,5 +428,33 @@ export const deleteConversation = mutation({
     // Note: In a production app with huge data, we would also cascade delete 
     // the messages associated with this conversation. For now, deleting the 
     // conversation record perfectly removes it from the UI.
+  },
+});
+
+// NEW: Toggle Block Status
+export const toggleBlock = mutation({
+  args: { targetUserId: v.id("users") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+    if (!user) throw new Error("User not found");
+
+    const existingBlock = await ctx.db.query("blocks")
+      .withIndex("by_blocker", q => q.eq("blockerId", user._id).eq("blockedId", args.targetUserId))
+      .unique();
+
+    if (existingBlock) {
+      await ctx.db.delete(existingBlock._id); // Unblock
+    } else {
+      await ctx.db.insert("blocks", {
+        blockerId: user._id,
+        blockedId: args.targetUserId, // Block
+      });
+    }
   },
 });

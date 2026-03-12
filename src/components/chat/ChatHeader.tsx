@@ -26,6 +26,7 @@ interface ChatHeaderProps {
   isGroup?: boolean;
   partnerId?: Id<"users">;
   currentTimer?: number; // Added to interface
+  isBlocker?: boolean; // <--- MUST BE HERE
 }
 
 export function ChatHeader({
@@ -37,6 +38,7 @@ export function ChatHeader({
   isGroup,
   partnerId,
   currentTimer,
+  isBlocker,
 }: ChatHeaderProps) {
   const online = isUserOnline(lastSeen);
   const router = useRouter();
@@ -62,6 +64,7 @@ export function ChatHeader({
         isGroup={isGroup}
         partnerId={partnerId}
         currentTimer={currentTimer}
+        isBlocker={isBlocker}
       />
 
       <div className="flex items-center gap-3">
@@ -91,10 +94,7 @@ export function ChatHeader({
             <h3 className="font-heading font-semibold text-sm">{name}</h3>
             {/* Visual Indicator if Disappearing Messages are ON */}
             {currentTimer ? (
-              <Timer
-                className="w-3 h-3 text-muted-foreground"
-                // title="Disappearing Messages ON"
-              />
+              <Timer className="w-3 h-3 text-muted-foreground" />
             ) : null}
           </div>
 
@@ -110,20 +110,6 @@ export function ChatHeader({
       </div>
 
       <div className="flex items-center gap-1">
-        {/* <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-primary"
-        >
-          <Phone className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-primary"
-        >
-          <Video className="w-4 h-4" />
-        </Button> */}
         <Button
           onClick={() => setIsSettingsOpen(true)}
           variant="ghost"

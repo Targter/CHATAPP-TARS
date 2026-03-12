@@ -46,7 +46,7 @@ export default defineSchema({
 
     isDeleted: v.optional(v.boolean()),
     // 
-     expiresAt: v.optional(v.number()), 
+    expiresAt: v.optional(v.number()), 
     isScheduled: v.optional(v.boolean()),
     scheduledFor: v.optional(v.number()),
   })
@@ -74,5 +74,12 @@ export default defineSchema({
   })
   .index("by_message", ["messageId"])
   .index("by_message_user_emoji", ["messageId", "userId", "emoji"]),
+
+  // block;
+  blocks: defineTable({
+    blockerId: v.id("users"),
+    blockedId: v.id("users"),
+  })
+  .index("by_blocker", ["blockerId", "blockedId"]),
 });
 

@@ -1,8 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-// ... keep existing 'kick' and 'list' ...
-
 export const kick = mutation({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {

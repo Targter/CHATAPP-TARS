@@ -1,6 +1,6 @@
 // convex/users.ts
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { v } from "convex/values";  
 
 /**
  * Stores a user in the database. 
@@ -46,24 +46,7 @@ export const store = mutation({
   },
 });
 
-/**
- * Get the current logged-in user's profile.
- */
-// export const currentUser = query({
-//   args: {},
-//   handler: async (ctx) => {
-//     const identity = await ctx.auth.getUserIdentity();
-//     if (!identity) {
-//       return null;
-//     }
-//     return await ctx.db
-//       .query("users")
-//       .withIndex("by_token", (q) =>
-//         q.eq("tokenIdentifier", identity.tokenIdentifier)
-//       )
-//       .unique();
-//   },
-// });
+
 export const currentUser = query({
   args: {},
   handler: async (ctx) => {
@@ -97,6 +80,7 @@ export const getUsers = query({
   },
 });
 
+
 export const updatePresence = mutation({
   args: {},
   handler: async (ctx) => {
@@ -118,6 +102,7 @@ export const updatePresence = mutation({
     }
   },
 });
+
 
 export const generateUploadUrl = mutation(async (ctx) => {
   return await ctx.storage.generateUploadUrl();
